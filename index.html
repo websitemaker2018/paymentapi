@@ -1,0 +1,115 @@
+<script>const methodData = [
+  {
+    supportedMethods: "basic-card",
+    data: {
+      supportedNetworks: ["visa", "mastercard"],
+      supportedTypes: ["debit", "credit"],
+    },
+  },
+  {
+    supportedMethods: "https://example.com/bobpay",
+    data: {
+      merchantIdentifier: "XXXX",
+      bobPaySpecificField: true,
+    },
+  },
+];
+
+const details = {
+  id: "super-store-order-123-12312",
+  displayItems: [
+    {
+      label: "Sub-total",
+      amount: { currency: "GBP", value: "5.00" },
+    },
+    {
+      label: "Sales Tax",
+      amount: { currency: "GBP", value: "0.00" },
+      type: "tax"
+    },
+  ],
+  total: {
+    label: "Total due",
+    // The total is USD$65.00 here because we need to
+    // add shipping (below). The selected shipping
+    // costs GBP £2.00.
+    amount: { currency: "GBP", value: "7.00" },
+  },
+};            
+
+const shippingOptions = [
+  {
+    id: "standard",
+    label: "🚛 Normal Postage (Now)",
+    amount: { currency: "GBP", value: "2.00" },
+    selected: true,
+  },
+
+];
+Object.assign(details, { shippingOptions });
+
+const creditCardFee = {
+  label: "Card processing fee",
+  amount: { currency: "GBP", value: "0.00" },
+};
+
+// Modifiers apply when the user chooses to pay with
+// a credit card.
+const modifiers = [
+  {
+    additionalDisplayItems: [creditCardFee],
+    supportedMethods: "basic-card",
+    total: {
+      label: "Total due",
+      amount: { currency: "GBP", value: "7.00" },
+    },
+    data: {
+      supportedTypes: "credit",
+    },
+  },
+];
+Object.assign(details, { modifiers });
+const options = {
+  requestPayerEmail: false,
+  requestPayerName: true,
+  requestPayerPhone: false,
+  requestShipping: false,
+}
+
+async function doPaymentRequest() {
+  try {
+    const request = new PaymentRequest(methodData, details, options);
+    // See below for a detailed example of handling these events
+    request.onshippingaddresschange = ev => ev.updateWith(details);
+    request.onshippingoptionchange = ev => ev.updateWith(details);
+    const response = await request.show();
+    await validateResponse(response);
+  } catch (err) {
+    // AbortError, SecurityError
+    console.error(err);
+  }
+}
+async function validateResponse(response) {
+  try {
+    if (await checkAllValuesAreGood(response)) {
+      await response.complete("success");
+    } else {
+      await response.complete("fail");
+    }
+  } catch (err) {
+    // Something went wrong...
+    await response.complete("fail");
+  }
+}
+// use doPaymentRequest(); to request payment
+
+
+
+</script>
+
+<center>
+
+<h1 style="color: #0DB1E7;">Do something!</h1>
+<INPUT 	type="button" value="hmmn..." onclick="doPaymentRequest();" />
+
+</center>
